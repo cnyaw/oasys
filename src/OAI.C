@@ -74,6 +74,26 @@ int *vartypes;
 int *propertytypes;
 var nullv;
 
+char* LoadFileStream(char *filename)
+{
+  FILE *hfile;
+  char *file;
+  hfile = fopen(filename, "rb");
+  if (hfile) {
+    fseek(hfile, 0, SEEK_END);
+    long sz = ftell(hfile);
+    fseek(hfile, 0, SEEK_SET);
+    file = new char[sz];
+    if (file) {
+      fread(file, sz, 1, hfile);
+    }
+    fclose(hfile);
+  } else {
+    perr("Open file %s fail", filename);
+  }
+  return file;
+}
+
 void Read(char **file, void *data, unsigned bytes)
 {
   memcpy(data, *file, bytes);
@@ -776,21 +796,9 @@ int main (int argc, char **argv)
     perr ("Object-Oriented Adventure Interpreter" VERSION "\n"
           "Usage: oai filename");
 
-  hfile = fopen(argv[1], "rb");
-  if (hfile) {
-    fseek(hfile, 0, SEEK_END);
-    long sz = ftell(hfile);
-    fseek(hfile, 0, SEEK_SET);
-    filehead = file = new char[sz];
-    if (file) {
-      fread(file, sz, 1, hfile);
-    }
-    fclose(hfile);
-    if (!file) {
-      perr("Can't load file %s\n", argv[1]);
-    }
-  } else {
-    perr("Can't open file %s\n", argv[1]);
+  filehead = file = LoadFileStream(argv[1]);
+  if (!file) {
+    perr("Load file %s fail", argv[1]);
   }
 
   srand(time(0));
