@@ -865,6 +865,15 @@ void LoadGame(char *filename)
   delete [] filehead;
 }
 
+void NewGame()
+{
+  objects.free ();
+  sp = 0;
+  memset (vars, 0, nvars * sizeof (var));
+  restart = FALSE;
+  applymethod (0, initmethod, 0);
+}
+
 int main (int argc, char **argv)
 {
   if (argc != 2 || !strcmp (argv[1], "?"))
@@ -873,8 +882,7 @@ int main (int argc, char **argv)
 
   LoadGame(argv[1]);
 
-  memset (vars, 0, nvars * sizeof (var));
-  applymethod (0, initmethod, 0);
+  NewGame();
   for (;;) {
     assert (sp == 0);
     getinput ();
@@ -882,11 +890,7 @@ int main (int argc, char **argv)
     if (restart) {
       if (!getyn ("Would you like to play again? (Y/N) "))
         return 0;
-      objects.free ();
-      sp = 0;
-      memset (vars, 0, nvars * sizeof (var));
-      restart = FALSE;
-      applymethod (0, initmethod, 0);
+      NewGame();
     }
   }
 }
