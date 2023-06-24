@@ -677,24 +677,22 @@ void docommand (int addressee, int methodno)
   applymethod (ad, methodno, nouns);
 }
 
-void command (void)
+int command (void)
 {
   int firstword, addressee, thisword, wordsleft, vwordsleft, vword, nounwords;
   int noun, i, j, k, argno;
 
-REDO:
-  getinput ();
   firstword = 0;
   addressee = -1;
   if (comma >= 0) {
     if (comma == 0) {
       print ("I don't know who you're trying to talk to.\n");
-      goto REDO;
+      return FALSE;
     }
     addressee = findclass (words, comma);
     if (addressee < 0) {
       print ("I don't know who you're trying to talk to.\n");
-      goto REDO;
+      return FALSE;
     }
     nwords -= firstword = comma;
   }
@@ -710,7 +708,7 @@ REDO:
           if (wordsleft == 0) {
             if (k == methods[i].verbs[j].nwords) {
               docommand (addressee, i);
-              return;
+              return TRUE;
             }
             break;
           }
@@ -752,7 +750,7 @@ REDO:
         }
       }
   print ("I don't understand you.\n");
-  goto REDO;
+  return FALSE;
 }
 
 int main (int argc, char **argv)
@@ -874,6 +872,7 @@ int main (int argc, char **argv)
   applymethod (0, initmethod, 0);
   for (;;) {
     assert (sp == 0);
+    getinput ();
     command ();
     if (restart) {
       if (!getyn ("Would you like to play again? (Y/N) "))
