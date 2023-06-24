@@ -132,14 +132,6 @@ inline int classno (dlist * o)
   return *((int *) (o + 1));
 }
 
-int readint (int file)
-{
-  int i;
-  Read (file, &i, sizeof (int));
-
-  return i;
-}
-
 int readint(char **file)
 {
   int i;
@@ -387,7 +379,8 @@ void restorevars (int n, var * vars, int *vartypes)
 
 int loadgame (void)
 {
-  int file, i;
+  char *file, *filehead;
+  int i;
   char gamecode[4];
   dlist *o;
 
@@ -397,33 +390,32 @@ int loadgame (void)
   input (buf);
   if (buf[0] == 0)
     strcpy (buf, filename);
-  file = open (buf, O_RDWR | O_BINARY);
-  if (file < 0) {
-    print ("Can't open file.\n");
-    return FALSE;
+  filehead = file = LoadFileStream(buf);
+  if (!file) {
+    perr("Load file %s fail", buf);
   }
-  Read (file, gamecode, 4);
+  Read (&file, gamecode, 4);
   if (memcmp (gamecode, "oas\1", 4)) {
     print ("Not a saved position for this game.\n");
-    close (file);
+    delete [] filehead;
     return FALSE;
   }
   strcpy (filename, buf);
   objects.free ();
-  Read (file, vars, nvars * sizeof (var));
-  i = readint (file);
+  Read (&file, vars, nvars * sizeof (var));
+  i = readint (&file);
   do {
     o = (dlist *) new char[sizeof (dlist) + sizeof (int) +
                            nproperties * sizeof (var)];
     memset (((char *) o) + sizeof (dlist) + sizeof (int), 0,
             nproperties * sizeof (var));
 
-    *classnoptr (o) = readint (file);
-    Read (file, propertyptr (o, 0), nproperties * sizeof (var));
+    *classnoptr (o) = readint (&file);
+    Read (&file, propertyptr (o, 0), nproperties * sizeof (var));
     objects += o;
   }
   while (--i > 0);
-  close (file);
+  delete [] filehead;
   restorevars (nvars, vars, vartypes);
   for (o = objects.next; o != &objects; o = o->next)
     restorevars (nproperties, propertyptr (o, 0), propertytypes);
@@ -789,7 +781,6 @@ REDO:
 int main (int argc, char **argv)
 {
   int n, i, j, k;
-  FILE *hfile;
   char *file, *filehead;
 
   if (argc != 2 || !strcmp (argv[1], "?"))
@@ -900,7 +891,7 @@ int main (int argc, char **argv)
     }
   }
 
-  delete(filehead);
+  delete [] filehead;
 
   memset (vars, 0, nvars * sizeof (var));
   applymethod (0, initmethod, 0);
