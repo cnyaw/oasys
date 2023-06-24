@@ -753,18 +753,14 @@ int command (void)
   return FALSE;
 }
 
-int main (int argc, char **argv)
+void LoadGame(char *filename)
 {
   int n, i, j, k;
   char *file, *filehead;
 
-  if (argc != 2 || !strcmp (argv[1], "?"))
-    perr ("Object-Oriented Adventure Interpreter" VERSION "\n"
-          "Usage: oai filename");
-
-  filehead = file = LoadFileStream(argv[1]);
+  filehead = file = LoadFileStream(filename);
   if (!file) {
-    perr("Load file %s fail", argv[1]);
+    perr("Load file %s fail", filename);
   }
 
   srand((unsigned int)time(0));
@@ -867,6 +863,15 @@ int main (int argc, char **argv)
   }
 
   delete [] filehead;
+}
+
+int main (int argc, char **argv)
+{
+  if (argc != 2 || !strcmp (argv[1], "?"))
+    perr ("Object-Oriented Adventure Interpreter" VERSION "\n"
+          "Usage: oai filename");
+
+  LoadGame(argv[1]);
 
   memset (vars, 0, nvars * sizeof (var));
   applymethod (0, initmethod, 0);
