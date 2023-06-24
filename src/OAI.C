@@ -197,11 +197,10 @@ void input (char *s)
   gets (s);
 }
 
-void getinput (void)
+int getinput (void)
 {
   int i, j, k, c;
 
-REDO:
   print ("> ");
   input (buf);
   for (i = 0; buf[i]; i++)
@@ -213,11 +212,11 @@ REDO:
     while (buf[i] == ' ')
       i++;
     if (!buf[i])
-      break;
+      return TRUE;
     if (buf[i] == ',') {
       if (comma >= 0) {
         print ("Commands should not have more than one comma.\n");
-        goto REDO;
+        return FALSE;
       }
       comma = nwords;
       i++;
@@ -234,7 +233,7 @@ REDO:
     if (strcmp (buf + i, "the")) {
       if (buf[i] == '-') {
         print ("Negative numbers not implemented.\n");
-        goto REDO;
+        return FALSE;
       }
       if (isdigit (buf[i]))
         words[nwords++] = ~atoi (buf + i);
@@ -244,11 +243,11 @@ REDO:
           print ("I don't understand the word \"");
           print (buf + i);
           print ("\".\n");
-          goto REDO;
+          return FALSE;
         }
         if (nwords == MAXWORDS) {
           print ("There were too many words in that command.\n");
-          goto REDO;
+          return FALSE;
         }
         words[nwords++] = k;
       }
@@ -885,7 +884,9 @@ int main (int argc, char **argv)
   NewGame();
   for (;;) {
     assert (sp == 0);
-    getinput ();
+    if (!getinput ()) {
+      continue;
+    }
     command ();
     if (restart) {
       if (!getyn ("Would you like to play again? (Y/N) "))
