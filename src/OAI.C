@@ -47,7 +47,6 @@ struct method {
   instruction *instructions;
 };
 
-int file;
 char **strings;
 var *vars;
 int nvars;
@@ -107,7 +106,7 @@ inline int classno (dlist * o)
   return *((int *) (o + 1));
 }
 
-int readint (void)
+int readint (int file)
 {
   int i;
   Read (file, &i, sizeof (int));
@@ -263,12 +262,12 @@ int findclass (int *words, int nwords)
   return -1;
 }
 
-void writeint (int i)
+void writeint (int file, int i)
 {
   Write (file, &i, sizeof (int));
 }
 
-void writevars (int n, var * vars, int *vartypes)
+void writevars (int file, int n, var * vars, int *vartypes)
 {
   dlist *o;
   int i;
@@ -294,6 +293,7 @@ void writevars (int n, var * vars, int *vartypes)
 
 void savegame (void)
 {
+  int file;
   dlist *o;
 
   print ("File name? [");
@@ -309,11 +309,11 @@ void savegame (void)
   }
   strcpy (filename, buf);
   Write (file, "oas\1", 4);
-  writevars (nvars, vars, vartypes);
-  writeint (objects.len ());
+  writevars (file, nvars, vars, vartypes);
+  writeint (file, objects.len ());
   for (o = objects.next; o != &objects; o = o->next) {
-    writeint (*classnoptr (o));
-    writevars (nproperties, propertyptr (o, 0), propertytypes);
+    writeint (file, *classnoptr (o));
+    writevars (file, nproperties, propertyptr (o, 0), propertytypes);
   }
   close (file);
 }
@@ -352,7 +352,7 @@ void restorevars (int n, var * vars, int *vartypes)
 
 int loadgame (void)
 {
-  int i;
+  int file, i;
   char gamecode[4];
   dlist *o;
 
@@ -376,14 +376,14 @@ int loadgame (void)
   strcpy (filename, buf);
   objects.free ();
   Read (file, vars, nvars * sizeof (var));
-  i = readint ();
+  i = readint (file);
   do {
     o = (dlist *) new char[sizeof (dlist) + sizeof (int) +
                            nproperties * sizeof (var)];
     memset (((char *) o) + sizeof (dlist) + sizeof (int), 0,
             nproperties * sizeof (var));
 
-    *classnoptr (o) = readint ();
+    *classnoptr (o) = readint (file);
     Read (file, propertyptr (o, 0), nproperties * sizeof (var));
     objects += o;
   }
@@ -753,7 +753,7 @@ REDO:
 
 int main (int argc, char **argv)
 {
-  int n, i, j, k;
+  int file, n, i, j, k;
 
   if (argc != 2 || !strcmp (argv[1], "?"))
     perr ("Object-Oriented Adventure Interpreter" VERSION "\n"
@@ -767,47 +767,47 @@ int main (int argc, char **argv)
   if (memcmp (buf, "oas", 4))
     perr ("Not an OASYS file");
 
-  n = readint ();
+  n = readint (file);
   strings = new char *[n];
 
   for (i = 0; i < n; i++) {
-    j = readint ();
+    j = readint (file);
   strings[i] = new char[j + 1];
 
     Read (file, strings[i], j);
     strings[i][j] = 0;
   }
 
-  nvars = readint ();
+  nvars = readint (file);
   vars = new var[nvars];
   vartypes = new int[nvars];
   Read (file, vartypes, nvars * sizeof (int));
 
-  nproperties = readint ();
+  nproperties = readint (file);
   propertytypes = new int[nproperties];
   Read (file, propertytypes, nproperties * sizeof (int));
 
-  nvocab = readint ();
+  nvocab = readint (file);
   vocab = new char *[nvocab];
 
   for (i = 0; i < nvocab; i++) {
-    j = readint ();
+    j = readint (file);
     vocab[i] = new char[j + 1];
 
     Read (file, vocab[i], j);
     vocab[i][j] = 0;
   }
 
-  nclasses = readint ();
+  nclasses = readint (file);
   classes = new Class[nclasses];
   for (i = 0; i < nclasses; i++) {
-  int nphrases = readint ();
+  int nphrases = readint (file);
 
     classes[i].nphrases = nphrases;
     if (nphrases) {
       classes[i].phrases = new phrase[nphrases];
       for (j = 0; j < nphrases; j++) {
-        k = readint ();
+        k = readint (file);
         classes[i].phrases[j].nwords = k;
         classes[i].phrases[j].words = new int[k];
         Read (file, classes[i].phrases[j].words, k * sizeof (int));
@@ -815,44 +815,44 @@ int main (int argc, char **argv)
     }
   }
 
-  nmethods = readint ();
+  nmethods = readint (file);
   methods = new method[nmethods];
-  initmethod = readint ();
-  selectaddresseemethod = readint ();
+  initmethod = readint (file);
+  selectaddresseemethod = readint (file);
   for (i = 0; i < nmethods; i++) {
     method *m = &methods[i];
 
-    m->type = readint ();
-    j = readint ();
+    m->type = readint (file);
+    j = readint (file);
     m->nargs = j;
     if (j) {
       m->argtypes = new int[j];
       m->selectors = new int[j];
 
       for (k = 0; k < j; k++) {
-        m->argtypes[k] = readint ();
-        m->selectors[k] = readint ();
+        m->argtypes[k] = readint (file);
+        m->selectors[k] = readint (file);
       }
     }
-    m->nvars = readint ();
+    m->nvars = readint (file);
     if (m->nvars) {
       m->vartypes = new int[m->nvars];
       Read (file, m->vartypes, m->nvars * sizeof (int));
     }
-    int nverbs = readint ();
+    int nverbs = readint (file);
 
     m->nverbs = nverbs;
     if (nverbs) {
       m->verbs = new phrase[nverbs];
       for (j = 0; j < nverbs; j++) {
-        k = readint ();
+        k = readint (file);
         m->verbs[j].nwords = k;
         m->verbs[j].words = new int[k];
         Read (file, m->verbs[j].words, k * sizeof (int));
       }
     }
-    m->noselect = readint ();
-    k = readint ();
+    m->noselect = readint (file);
+    k = readint (file);
     m->ninstructions = k;
     if (k) {
       m->instructions = new instruction[k];
