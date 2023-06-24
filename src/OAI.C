@@ -1,5 +1,4 @@
-#include <io.h>
-#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <assert.h>
@@ -77,7 +76,7 @@ var nullv;
 char* LoadFileStream(char *filename)
 {
   FILE *hfile;
-  char *file;
+  char *file = 0;
   hfile = fopen(filename, "rb");
   if (hfile) {
     fseek(hfile, 0, SEEK_END);
@@ -88,8 +87,6 @@ char* LoadFileStream(char *filename)
       fread(file, sz, 1, hfile);
     }
     fclose(hfile);
-  } else {
-    perr("Open file %s fail", filename);
   }
   return file;
 }
@@ -98,6 +95,12 @@ void Read(char **file, void *data, unsigned bytes)
 {
   memcpy(data, *file, bytes);
   *file += bytes;
+}
+
+void Write(FILE *file, void *data, unsigned bytes)
+{
+  if (fwrite(data, 1, bytes, file) != bytes)
+    perr ("ERROR - Can't write %u bytes to file %d", bytes, file);
 }
 
 inline void chkobject (dlist * o)
@@ -289,12 +292,12 @@ int findclass (int *words, int nwords)
   return -1;
 }
 
-void writeint (int file, int i)
+void writeint (FILE *file, int i)
 {
   Write (file, &i, sizeof (int));
 }
 
-void writevars (int file, int n, var * vars, int *vartypes)
+void writevars (FILE *file, int n, var * vars, int *vartypes)
 {
   dlist *o;
   int i;
@@ -320,7 +323,7 @@ void writevars (int file, int n, var * vars, int *vartypes)
 
 void savegame (void)
 {
-  int file;
+  FILE *file;
   dlist *o;
 
   print ("File name? [");
@@ -329,8 +332,8 @@ void savegame (void)
   input (buf);
   if (buf[0] == 0)
     strcpy (buf, filename);
-  file = open (buf, O_RDWR | O_BINARY | O_CREAT | O_TRUNC, 0777);
-  if (file < 0) {
+  file = fopen(buf, "wb");
+  if (!file) {
     print ("Can't create file.\n");
     return;
   }
@@ -342,7 +345,7 @@ void savegame (void)
     writeint (file, *classnoptr (o));
     writevars (file, nproperties, propertyptr (o, 0), propertytypes);
   }
-  close (file);
+  fclose (file);
 }
 
 void chkvars (int n, var * vars, int *vartypes, dlist * o)
