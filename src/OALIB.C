@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <io.h>
-#include <fcntl.h>
 #include <string.h>
 #include "oalib.h"
 
@@ -31,41 +29,34 @@ FILE *Fopen (char *filename, char *mode)
   return result;
 }
 
-int Create (char *filename)
+void Read(char **file, void *data, unsigned bytes)
 {
-  int file;
-
-  file = open (filename, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0777);
-  if (file < 0)
-    perr ("ERROR - Can't create file %s", filename);
-  return file;
+  memcpy(data, *file, bytes);
+  *file += bytes;
 }
 
-void Write (int file, void *data, unsigned bytes)
+int readint(char **file)
 {
-  if (write (file, data, bytes) != bytes)
+  int i;
+  Read(file, &i, sizeof (int));
+
+  return i;
+}
+
+void Write(FILE *file, void *data, unsigned bytes)
+{
+  if (fwrite(data, 1, bytes, file) != bytes)
     perr ("ERROR - Can't write %u bytes to file %d", bytes, file);
 }
 
-int Open (char *filename)
+void writeint (FILE *file, int i)
 {
-  int file;
-
-  file = open (filename, O_RDWR | O_BINARY);
-  if (file < 0)
-    perr ("ERROR - Can't open file %s", filename);
-  return file;
-}
-
-void Read (int file, void *data, unsigned bytes)
-{
-  if (read (file, data, bytes) != bytes)
-    perr ("ERROR - Can't read %u bytes from file %d", bytes, file);
+  Write (file, &i, sizeof (int));
 }
 
 char *defext (char *filename, char *ext, int force)
 {
-  int i = strlen (filename);
+  int i = (int)strlen (filename);
 
   while (i && filename[i] != '.' && filename[i] != '/' && filename[i] != '\\')
     i--;
@@ -74,7 +65,7 @@ char *defext (char *filename, char *ext, int force)
       return filename;
   }
   else
-    i = strlen (filename);
+    i = (int)strlen (filename);
   static char result[64];
 
   memcpy (result, filename, i);
@@ -101,7 +92,7 @@ char *strdup (char *s)
 {
   int i;
 
-  i = strlen (s) + 1;
+  i = (int)strlen (s) + 1;
   return (char *) memcpy (new char[i], s, i);
 }
 

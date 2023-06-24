@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <io.h>
 #include <limits.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -187,7 +186,6 @@ slisthead classes;
 slisthead methods;
 int stack[256];
 int sp;
-int file;
 ftree vocabtree = {strcmp};
 char **vocablist;
 int nvocab;
@@ -1212,18 +1210,13 @@ int copyvocab (ftreenode * t, int i)
   return n + 1 + copyvocab (t->right, i + n + 1);
 }
 
-void writeint (int i)
+void writephraselist (FILE *file, slisthead * h)
 {
-  Write (file, &i, sizeof (int));
-}
-
-void writephraselist (slisthead * h)
-{
-  writeint (h->len ());
+  writeint (file, h->len ());
   for (phrase * p = (phrase *) h->next; p; p = (phrase *) p->next) {
-    writeint (p->words.len ());
+    writeint (file, p->words.len ());
     for (word * w = (word *) p->words.next; w; w = (word *) w->next)
-      writeint (findvocab (w->name));
+      writeint (file, findvocab (w->name));
   }
 }
 
@@ -1243,58 +1236,59 @@ void output (char *filename)
   phrase *p;
   Class *c;
   instruction *I;
+  FILE *file;
 
-  file = Create (filename);
+  file = Fopen(filename, "wb");
 
   Write (file, "oas", 4);
 
-  writeint (nstrings);
+  writeint (file, nstrings);
   for (w = (word *) strings.next; w; w = (word *) w->next) {
-    i = strlen (w->name);
-    writeint (i);
+    i = (int)strlen (w->name);
+    writeint (file, i);
     Write (file, w->name, i);
   }
   if (!nstrings)
     warning ("No strings defined");
 
-  writeint (variables.len ());
+  writeint (file, variables.len ());
   for (v = (variable *) variables.next; v; v = (variable *) v->next)
-    writeint (v->type);
+    writeint (file, v->type);
 
   i = properties.len ();
   if (i == 0)
     warning ("No properties defined");
-  writeint (i);
+  writeint (file, i);
   for (v = (variable *) properties.next; v; v = (variable *) v->next)
-    writeint (v->type);
+    writeint (file, v->type);
 
   nvocab = vocabtree.size ();
-  writeint (nvocab);
+  writeint (file, nvocab);
   if (nvocab) {
     vocablist = new char *[nvocab];
 
     i = copyvocab (vocabtree.t, 0);
     assert (i == nvocab);
     for (i = 0; i < nvocab; i++) {
-      j = strlen (vocablist[i]);
-      writeint (j);
+      j = (int)strlen (vocablist[i]);
+      writeint (file, j);
       Write (file, vocablist[i], j);
     }
   } else
     warning ("No vocabulary defined");
 
-  writeint (classes.len ());
+  writeint (file, classes.len ());
   for (c = (Class *) classes.next; c; c = (Class *) c->next)
-    writephraselist (&c->nouns);
+    writephraselist (file, &c->nouns);
 
-  writeint (methods.len ());
+  writeint (file, methods.len ());
   for (m = (method *) methods.next, i = 0; m; m = (method *) m->next, i++)
     if (m->name == ID_INIT) {
       if (m->type != T_VOID)
         warning ("Init method should not return a value");
       if (m->args.next)
         warning ("Init method should not take arguments");
-      writeint (i);
+      writeint (file, i);
       break;
     }
   if (!m)
@@ -1305,44 +1299,44 @@ void output (char *filename)
         warning ("Select addressee method should return an int value");
       if (m->args.next)
         warning ("Select addressee method should not take arguments");
-      writeint (i);
+      writeint (file, i);
       break;
     }
   if (!m)
-    writeint (-1);
+    writeint (file, -1);
   for (m = (method *) methods.next; m; m = (method *) m->next) {
-    writeint (m->type);
-    writeint (m->args.len ());
+    writeint (file, m->type);
+    writeint (file, m->args.len ());
     for (arg * a = (arg *) m->args.next; a; a = (arg *) a->next) {
-      writeint (a->type);
+      writeint (file, a->type);
       if (m->verbs.next) {
         if (a->selector < 0 && a->type == T_OBJECT)
           warning ("Command method \"%s\" has no selector on object argument", m->name);
       } else if (a->selector >= 0)
         warning ("Non-command method \"%s\" has selector on argument",
                  m->name);
-      writeint (a->selector);
+      writeint (file, a->selector);
     }
-    writeint (m->variables.len ());
+    writeint (file, m->variables.len ());
     for (v = (variable *) m->variables.next; v; v = (variable *) v->next)
-      writeint (v->type);
-    writeint (m->verbs.len ());
+      writeint (file, v->type);
+    writeint (file, m->verbs.len ());
     for (p = (phrase *) m->verbs.next; p; p = (phrase *) p->next) {
-      writeint (p->words.len ());
+      writeint (file, p->words.len ());
       for (w = (word *) p->words.next; w; w = (word *) w->next) {
         for (v = (variable *) m->args.next, i = 0; v; v = (variable *) v->next, i++)
           if (v->name == w->name)
             break;
         if (v)
-          writeint (~i);
+          writeint (file, ~i);
         else
-          writeint (findvocab (w->name));
+          writeint (file, findvocab (w->name));
       }
     }
-    writeint (m->noselect);
+    writeint (file, m->noselect);
     if (m->noselect >= 0 && (m->args.next || m->type != T_INT))
       warning ("Non-selector method \"%s\" should not have message", m->name);
-    writeint (m->code.len ());
+    writeint (file, m->code.len ());
     for (I = (instruction *) m->code.next; I; I = (instruction *) I->next) {
       if (I->op == I_BREAK)
         warning ("BREAK outside loop");
@@ -1352,7 +1346,7 @@ void output (char *filename)
     }
   }
 
-  close (file);
+  fclose (file);
 }
 
 int main (int argc, char **argv)
@@ -1361,7 +1355,7 @@ int main (int argc, char **argv)
   if (argc != 2 || !strcmp (argv[1], "?"))
     perr ("Usage: oac filename");
   parse (defext (argv[1], ".s"));
-  int i = strlen (argv[1]);
+  int i = (int)strlen (argv[1]);
 
   while (--i >= 0)
     if (argv[1][i] == '.') {

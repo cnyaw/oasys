@@ -91,18 +91,6 @@ char* LoadFileStream(char *filename)
   return file;
 }
 
-void Read(char **file, void *data, unsigned bytes)
-{
-  memcpy(data, *file, bytes);
-  *file += bytes;
-}
-
-void Write(FILE *file, void *data, unsigned bytes)
-{
-  if (fwrite(data, 1, bytes, file) != bytes)
-    perr ("ERROR - Can't write %u bytes to file %d", bytes, file);
-}
-
 inline void chkobject (dlist * o)
 {
   if (!o)
@@ -134,15 +122,6 @@ inline int classno (dlist * o)
     return -1;
   return *((int *) (o + 1));
 }
-
-int readint(char **file)
-{
-  int i;
-  Read(file, &i, sizeof (int));
-
-  return i;
-}
-
 
 int findvocab (char *s)
 {
@@ -290,11 +269,6 @@ int findclass (int *words, int nwords)
       return i;
 
   return -1;
-}
-
-void writeint (FILE *file, int i)
-{
-  Write (file, &i, sizeof (int));
 }
 
 void writevars (FILE *file, int n, var * vars, int *vartypes)
@@ -795,7 +769,7 @@ int main (int argc, char **argv)
     perr("Load file %s fail", argv[1]);
   }
 
-  srand(time(0));
+  srand((unsigned int)time(0));
 
   Read (&file, buf, 4);
   if (memcmp (buf, "oas", 4))

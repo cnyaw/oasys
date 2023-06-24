@@ -134,12 +134,11 @@ struct ftree {
 char *defext (char *, char *, int = FALSE);
 void perr (char *...);
 
-int Create (char *);
 FILE *Fopen (char *, char *);
-int Open (char *);
-void Read (int, void *, unsigned);
-void Rename (char *, char *);
-void Write (int, void *, unsigned);
+void Read(char **file, void *data, unsigned bytes);
+int readint(char **file);
+void Write(FILE *file, void *data, unsigned bytes);
+void writeint (FILE *file, int i);
 
 char *strdup (char *);
 int strpcmp (const void *, const void *);
