@@ -74,6 +74,12 @@ int *vartypes;
 int *propertytypes;
 var nullv;
 
+void Read(char **file, void *data, unsigned bytes)
+{
+  memcpy(data, *file, bytes);
+  *file += bytes;
+}
+
 inline void chkobject (dlist * o)
 {
   if (!o)
@@ -113,6 +119,15 @@ int readint (int file)
 
   return i;
 }
+
+int readint(char **file)
+{
+  int i;
+  Read(file, &i, sizeof (int));
+
+  return i;
+}
+
 
 int findvocab (char *s)
 {
@@ -753,114 +768,131 @@ REDO:
 
 int main (int argc, char **argv)
 {
-  int file, n, i, j, k;
+  int n, i, j, k;
+  FILE *hfile;
+  char *file, *filehead;
 
   if (argc != 2 || !strcmp (argv[1], "?"))
     perr ("Object-Oriented Adventure Interpreter" VERSION "\n"
           "Usage: oai filename");
 
+  hfile = fopen(argv[1], "rb");
+  if (hfile) {
+    fseek(hfile, 0, SEEK_END);
+    long sz = ftell(hfile);
+    fseek(hfile, 0, SEEK_SET);
+    filehead = file = new char[sz];
+    if (file) {
+      fread(file, sz, 1, hfile);
+    }
+    fclose(hfile);
+    if (!file) {
+      perr("Can't load file %s\n", argv[1]);
+    }
+  } else {
+    perr("Can't open file %s\n", argv[1]);
+  }
+
   srand(time(0));
 
-  file = Open (argv[1]);
-
-  Read (file, buf, 4);
+  Read (&file, buf, 4);
   if (memcmp (buf, "oas", 4))
     perr ("Not an OASYS file");
 
-  n = readint (file);
+  n = readint (&file);
   strings = new char *[n];
 
   for (i = 0; i < n; i++) {
-    j = readint (file);
+    j = readint (&file);
   strings[i] = new char[j + 1];
 
-    Read (file, strings[i], j);
+    Read (&file, strings[i], j);
     strings[i][j] = 0;
   }
 
-  nvars = readint (file);
+  nvars = readint (&file);
   vars = new var[nvars];
   vartypes = new int[nvars];
-  Read (file, vartypes, nvars * sizeof (int));
+  Read (&file, vartypes, nvars * sizeof (int));
 
-  nproperties = readint (file);
+  nproperties = readint (&file);
   propertytypes = new int[nproperties];
-  Read (file, propertytypes, nproperties * sizeof (int));
+  Read (&file, propertytypes, nproperties * sizeof (int));
 
-  nvocab = readint (file);
+  nvocab = readint (&file);
   vocab = new char *[nvocab];
 
   for (i = 0; i < nvocab; i++) {
-    j = readint (file);
+    j = readint (&file);
     vocab[i] = new char[j + 1];
 
-    Read (file, vocab[i], j);
+    Read (&file, vocab[i], j);
     vocab[i][j] = 0;
   }
 
-  nclasses = readint (file);
+  nclasses = readint (&file);
   classes = new Class[nclasses];
   for (i = 0; i < nclasses; i++) {
-  int nphrases = readint (file);
+  int nphrases = readint (&file);
 
     classes[i].nphrases = nphrases;
     if (nphrases) {
       classes[i].phrases = new phrase[nphrases];
       for (j = 0; j < nphrases; j++) {
-        k = readint (file);
+        k = readint (&file);
         classes[i].phrases[j].nwords = k;
         classes[i].phrases[j].words = new int[k];
-        Read (file, classes[i].phrases[j].words, k * sizeof (int));
+        Read (&file, classes[i].phrases[j].words, k * sizeof (int));
       }
     }
   }
 
-  nmethods = readint (file);
+  nmethods = readint (&file);
   methods = new method[nmethods];
-  initmethod = readint (file);
-  selectaddresseemethod = readint (file);
+  initmethod = readint (&file);
+  selectaddresseemethod = readint (&file);
   for (i = 0; i < nmethods; i++) {
     method *m = &methods[i];
 
-    m->type = readint (file);
-    j = readint (file);
+    m->type = readint (&file);
+    j = readint (&file);
     m->nargs = j;
     if (j) {
       m->argtypes = new int[j];
       m->selectors = new int[j];
 
       for (k = 0; k < j; k++) {
-        m->argtypes[k] = readint (file);
-        m->selectors[k] = readint (file);
+        m->argtypes[k] = readint (&file);
+        m->selectors[k] = readint (&file);
       }
     }
-    m->nvars = readint (file);
+    m->nvars = readint (&file);
     if (m->nvars) {
       m->vartypes = new int[m->nvars];
-      Read (file, m->vartypes, m->nvars * sizeof (int));
+      Read (&file, m->vartypes, m->nvars * sizeof (int));
     }
-    int nverbs = readint (file);
+    int nverbs = readint (&file);
 
     m->nverbs = nverbs;
     if (nverbs) {
       m->verbs = new phrase[nverbs];
       for (j = 0; j < nverbs; j++) {
-        k = readint (file);
+        k = readint (&file);
         m->verbs[j].nwords = k;
         m->verbs[j].words = new int[k];
-        Read (file, m->verbs[j].words, k * sizeof (int));
+        Read (&file, m->verbs[j].words, k * sizeof (int));
       }
     }
-    m->noselect = readint (file);
-    k = readint (file);
+    m->noselect = readint (&file);
+    k = readint (&file);
     m->ninstructions = k;
     if (k) {
       m->instructions = new instruction[k];
-      Read (file, m->instructions, k * sizeof (instruction));
+      Read (&file, m->instructions, k * sizeof (instruction));
     }
   }
 
-  close (file);
+  delete(filehead);
 
   memset (vars, 0, nvars * sizeof (var));
   applymethod (0, initmethod, 0);
