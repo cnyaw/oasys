@@ -559,12 +559,14 @@ var applymethod (dlist * o, int methodno, var * argv)
     case I_PRINTSTR:
       print (strings[stack[--sp].i]);
       break;
+#ifndef __EMSCRIPTEN__
     case I_SAVE:
       savegame ();
       break;
     case I_LOAD:
       stack[sp++].i = loadgame ();
       break;
+#endif
     case I_MINUS:
       stack[sp - 1].i = -stack[sp - 1].i;
       break;
