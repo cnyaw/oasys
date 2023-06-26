@@ -84,7 +84,7 @@ struct treenode {
 };
 
 struct tree {
-  int (_cdecl * fcmp) (const char *, const char *);
+  int (*fcmp) (const char *, const char *);
   treenode *t;
 
   void *operator += (void *);
@@ -113,7 +113,7 @@ struct ftreenode {
 };
 
 struct ftree {
-  int (_cdecl * fcmp) (const char *, const char *);
+  int (*fcmp) (const char *, const char *);
   ftreenode *t;
 
   void *operator += (void *);

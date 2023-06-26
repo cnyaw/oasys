@@ -140,6 +140,7 @@ void printnewline (void)
 {
   putchar ('\n');
   printx = 0;
+#ifndef __EMSCRIPTEN__
   printy++;
   if (printy == 24) {
     printf ("MORE...");
@@ -147,6 +148,7 @@ void printnewline (void)
     printf ("\r        \r");
     printy = 0;
   }
+#endif
 }
 
 void printchar (int c)
@@ -194,15 +196,17 @@ void print (int i)
 void input (char *s)
 {
   printx = printy = 0;
+#ifdef __EMSCRIPTEN__
+  // NOP, wait for cSendCmd called.
+#else
   gets (s);
+#endif
 }
 
-int getinput (void)
+int getinput_i(void)
 {
   int i, j, k, c;
 
-  print ("> ");
-  input (buf);
   for (i = 0; buf[i]; i++)
     if (buf[i] == '\t' || buf[i] == '\'' || buf[i] == '"')
       buf[i] = ' ';
@@ -255,6 +259,17 @@ int getinput (void)
     buf[j] = c;
     i = j;
   }
+}
+
+int getinput (void)
+{
+  print ("> ");
+  input (buf);
+#ifndef __EMSCRIPTEN__
+  return getinput_i();
+#else
+  return FALSE;
+#endif
 }
 
 int findclass (int *words, int nwords)
@@ -311,7 +326,7 @@ void savegame (void)
     return;
   }
   strcpy (filename, buf);
-  Write (file, "oas\1", 4);
+  Write (file, (void*)"oas\1", 4);
   writevars (file, nvars, vars, vartypes);
   writeint (file, objects.len ());
   for (o = objects.next; o != &objects; o = o->next) {
@@ -508,9 +523,11 @@ var applymethod (dlist * o, int methodno, var * argv)
       objects += o2;
       stack[sp++].o = o2;
       break;
+#ifndef __EMSCRIPTEN__
     case I_QUIT:
       if (!getyn ("Are you sure? (Y/N) "))
         break;
+#endif
     case I_EXIT:
       restart = TRUE;
       return nullv;
@@ -877,16 +894,37 @@ void NewGame()
   applymethod (0, initmethod, 0);
 }
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include "ESCAPE.h"
+extern "C" {
+int EMSCRIPTEN_KEEPALIVE cSendCmd(char *pBuff)
+{
+  strcpy(buf, pBuff);
+  if (getinput_i()) {
+    printf("%s\n", pBuff);
+    command();
+  }
+  getinput();
+  return 0;
+}
+} // extern "C"
+#endif
+
 int main (int argc, char **argv)
 {
+  srand((unsigned int)time(0));
+
+#ifdef __EMSCRIPTEN__
+  LoadGameFromStream((char*)BIN);
+  NewGame();
+  getinput();
+  emscripten_exit_with_live_runtime();
+#else
   if (argc != 2 || !strcmp (argv[1], "?"))
     perr ("Object-Oriented Adventure Interpreter" VERSION "\n"
           "Usage: oai filename");
-
   LoadGame(argv[1]);
-
-  srand((unsigned int)time(0));
-
   NewGame();
   for (;;) {
     assert (sp == 0);
@@ -900,4 +938,5 @@ int main (int argc, char **argv)
       NewGame();
     }
   }
+#endif
 }
