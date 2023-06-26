@@ -752,17 +752,9 @@ int command (void)
   return FALSE;
 }
 
-void LoadGame(char *filename)
+void LoadGameFromStream(char *file)
 {
   int n, i, j, k;
-  char *file, *filehead;
-
-  filehead = file = LoadFileStream(filename);
-  if (!file) {
-    perr("Load file %s fail", filename);
-  }
-
-  srand((unsigned int)time(0));
 
   Read (&file, buf, 4);
   if (memcmp (buf, "oas", 4))
@@ -860,8 +852,20 @@ void LoadGame(char *filename)
       Read (&file, m->instructions, k * sizeof (instruction));
     }
   }
+}
 
-  delete [] filehead;
+void LoadGame(char *filename)
+{
+  char *file;
+
+  file = LoadFileStream(filename);
+  if (!file) {
+    perr("Load file %s fail", filename);
+  }
+
+  LoadGameFromStream(file);
+
+  delete [] file;
 }
 
 void NewGame()
@@ -880,6 +884,8 @@ int main (int argc, char **argv)
           "Usage: oai filename");
 
   LoadGame(argv[1]);
+
+  srand((unsigned int)time(0));
 
   NewGame();
   for (;;) {
