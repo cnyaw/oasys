@@ -29,3 +29,5 @@ I would also like to know the changes that you made in order to do so.
 Jeff Jenness
 jeffj@quapaw.astate.edu
 ```
+
+[Play online](https://smallworld.idv.tw/escape/play.html)
