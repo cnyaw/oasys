@@ -30,4 +30,4 @@ Jeff Jenness
 jeffj@quapaw.astate.edu
 ```
 
-[Play online](https://smallworld.idv.tw/escape/play.html)
+[Play online](https://smallworld.idv.tw/game/escape/play.html)
