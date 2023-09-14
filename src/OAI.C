@@ -698,7 +698,7 @@ void docommand (int addressee, int methodno)
 int command (void)
 {
   int firstword, addressee, thisword, wordsleft, vwordsleft, vword, nounwords;
-  int noun, i, j, k, argno;
+  int noun = -1, i, j, k, argno;
 
   firstword = 0;
   addressee = -1;
