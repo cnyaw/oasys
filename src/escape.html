@@ -87,7 +87,6 @@ function sendCommand_i() {
   }
   var ptr  = allocate(intArrayFromString(cmd), 'i8', ALLOC_NORMAL);
   Module.ccall('cSendCmd', 'number', ['number'], [ptr]);
-  var resValue = Pointer_stringify(retPtr);
   _free(ptr);
 }
 </script>
