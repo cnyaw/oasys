@@ -5,17 +5,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Escape from Planet Delta by Russell Wallace</title>
+<link rel="stylesheet" href="../../css/style.css">
 <style>
-#output {
-  background:black;
-  color:lightgray;
-  font:monospace;
-}
+#output {border:0;margin:0;padding:0;background:black;color:lightgray;font:monospace;width:100%;}
 </style>
 </head>
 <body>
-<h1>Escape from Planet Delta by Russell Wallace</h1>
-<textarea id="output" rows="32" style="width:100%"></textarea>
+<div id="title">
+<b>Escape from Planet Delta by Russell Wallace</b>
+</div>
+<textarea id="output" rows="32"></textarea>
 <input id="cmd" type="text" maxlength="256" onkeyup="sendCommand(event)">
 <input type="button" value="Enter" onclick="sendCommand_i()">
 <div class="footer">
@@ -85,9 +84,7 @@ function sendCommand_i() {
   if ('' == cmd) {
     return;
   }
-  var ptr  = allocate(intArrayFromString(cmd), 'i8', ALLOC_NORMAL);
-  Module.ccall('cSendCmd', 'number', ['number'], [ptr]);
-  _free(ptr);
+  Module.ccall('cSendCmd', 'number', ['string'], [cmd]);
 }
 </script>
 <script src="a.out.js"></script>

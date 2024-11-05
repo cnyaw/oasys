@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "oalib.h"
-#include "ins.h"
+#include <unistd.h>
+#include "OALIB.H"
+#include "INS.H"
 
 enum {
   TK_ID,
@@ -1240,7 +1241,7 @@ void output (char *filename)
 
   file = Fopen(filename, "wb");
 
-  Write (file, "oas", 4);
+  Write (file, (void *)"oas", 4);
 
   writeint (file, nstrings);
   for (w = (word *) strings.next; w; w = (word *) w->next) {

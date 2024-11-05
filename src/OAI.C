@@ -4,8 +4,8 @@
 #include <assert.h>
 #include <time.h>
 #include <string.h>
-#include "oalib.h"
-#include "ins.h"
+#include "OALIB.H"
+#include "INS.H"
 
 const int MAXWORDS = 64;
 const int MAXSTACK = 1024;
@@ -900,7 +900,7 @@ void NewGame()
 #include <emscripten.h>
 #include "ESCAPE.h"
 extern "C" {
-int EMSCRIPTEN_KEEPALIVE cSendCmd(char *pBuff)
+int EMSCRIPTEN_KEEPALIVE cSendCmd(const char *pBuff)
 {
   strcpy(buf, pBuff);
   if (getinput_i()) {

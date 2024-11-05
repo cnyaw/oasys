@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "oalib.h"
+#include "OALIB.H"
 
 void perr (char *format...)
 {
