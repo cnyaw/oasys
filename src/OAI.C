@@ -898,7 +898,7 @@ void NewGame()
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#include "ESCAPE.h"
+#include "ESCAPE.h"                     // Generate ESCAPE.h from compiled ESCAPE.s as uchar array BIN by bin2c tool.
 extern "C" {
 int EMSCRIPTEN_KEEPALIVE cSendCmd(const char *pBuff)
 {
